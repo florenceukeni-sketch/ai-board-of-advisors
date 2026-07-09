@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Board of Advisors</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230e0e10'/><circle cx='16' cy='16' r='6' fill='%23C4A35A'/></svg>">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #080809;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    }
+
+    #app {
+      background: #0e0e10;
+      border-radius: 16px;
+      border: 0.5px solid rgba(255,255,255,0.08);
+      color: #f0eff4;
+      width: 100%;
+      max-width: 760px;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 48px);
+      max-height: 840px;
+      overflow: hidden;
+    }
+
+    /* Network error banner */
+    .net-banner {
+      background: rgba(229,115,115,0.12);
+      border-bottom: 0.5px solid rgba(229,115,115,0.25);
+      color: #E57373;
+      font-size: 12px;
+      padding: 8px 16px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .net-banner code { font-size: 11.5px; opacity: 0.85; }
+
+    /* Header */
+    .hdr {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 0.5px solid rgba(255,255,255,0.07);
+      flex-shrink: 0;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+    }
+    .brand-pip {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #C4A35A;
+      flex-shrink: 0;
+    }
+    .mode-pills { display: flex; gap: 4px; margin: 0 auto; }
+    .pill {
+      font-size: 12px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 0.5px solid rgba(255,255,255,0.1);
+      background: transparent;
+      color: rgba(255,255,255,0.35);
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .pill.active {
+      background: rgba(255,255,255,0.09);
+      color: #f0eff4;
+      border-color: rgba(255,255,255,0.18);
+    }
+    .mem-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      background: transparent;
+      border: 0.5px solid rgba(255,255,255,0.09);
+      border-radius: 6px;
+      padding: 5px 9px;
+      cursor: pointer;
+      transition: all 0.12s;
+      white-space: nowrap;
+    }
+    .mem-btn:hover { color: #f0eff4; border-color: rgba(255,255,255,0.2); }
+
+    /* Advisor row */
+    .adv-row {
+      display: flex;
+      gap: 7px;
+      padding: 12px 14px;
+      border-bottom: 0.5px solid rgba(255,255,255,0.07);
+      overflow-x: auto;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+    .adv-row::-webkit-scrollbar { display: none; }
+    .acard {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 10px 10px;
+      border-radius: 10px;
+      border: 0.5px solid rgba(255,255,255,0.07);
+      background: #16161a;
+      cursor: pointer;
+      transition: all 0.12s;
+      width: 90px;
+    }
+    .acard:hover { background: #1d1d24; border-color: rgba(255,255,255,0.14); }
+    .acard.sel { background: #1d1d24; }
+    .av {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+    .av-nm { font-size: 10px; font-weight: 500; color: #f0eff4; text-align: center; line-height: 1.25; }
+    .av-rl { font-size: 9px; color: rgba(255,255,255,0.3); text-align: center; line-height: 1.25; }
+
+    /* Board header (progress row + status — stays fixed while cards scroll) */
+    .board-hdr {
+      flex-shrink: 0;
+      border-bottom: 0.5px solid rgba(255,255,255,0.06);
+    }
+
+    /* Main content area */
+    .content {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scrollbar-width: thin;
+      scrollbar-color: #1d1d24 transparent;
+    }
+
+    /* Empty states */
+    .empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 32px 20px;
+      text-align: center;
+      flex: 1;
+      min-height: 200px;
+    }
+    .empty-lbl {
+      font-size: 13px;
+      color: rgba(255,255,255,0.28);
+      line-height: 1.6;
+      max-width: 290px;
+    }
+    .sugg-row { display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 380px; margin-top: 6px; }
+    .sugg {
+      font-size: 11.5px;
+      color: rgba(255,255,255,0.36);
+      background: #16161a;
+      border: 0.5px solid rgba(255,255,255,0.08);
+      border-radius: 7px;
+      padding: 8px 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.11s;
+    }
+    .sugg:hover { color: #f0eff4; border-color: rgba(255,255,255,0.17); background: #1d1d24; }
+
+    /* Chat messages (individual mode) */
+    .msg { display: flex; flex-direction: column; gap: 3px; }
+    .msg.user { align-items: flex-end; }
+    .msg.asst { align-items: flex-start; }
+    .msg-meta {
+      font-size: 10.5px;
+      color: rgba(255,255,255,0.28);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 2px;
+    }
+    .av-sm {
+      width: 17px; height: 17px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 7px;
+      font-weight: 700;
+    }
+    .bubble {
+      font-size: 13.5px;
+      line-height: 1.68;
+      padding: 11px 14px;
+      border-radius: 10px;
+      border: 0.5px solid rgba(255,255,255,0.07);
+      max-width: 88%;
+    }
+    .bubble p + p { margin-top: 10px; }
+    .msg.user .bubble { background: #1d1d24; border-radius: 10px 10px 2px 10px; }
+    .msg.asst .bubble { background: #16161a; border-radius: 2px 10px 10px 10px; }
+    .msg-actions { display: flex; gap: 6px; margin-top: 2px; }
+    .act-btn {
+      font-size: 10px;
+      color: rgba(255,255,255,0.22);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color 0.1s;
+    }
+    .act-btn:hover { color: rgba(255,255,255,0.6); }
+
+    /* Loading dots */
+    .dots { display: flex; gap: 4px; padding: 10px 0; }
+    .dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      animation: blink 1.2s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
+
+    /* Error messages */
+    .err-msg {
+      font-size: 12px;
+      color: #E57373;
+      background: rgba(229,115,115,0.08);
+      border: 0.5px solid rgba(229,115,115,0.2);
+      border-radius: 7px;
+      padding: 8px 12px;
+      max-width: 88%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .err-setup {
+      font-size: 12px;
+      color: rgba(255,255,255,0.55);
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      border-radius: 7px;
+      padding: 10px 14px;
+      max-width: 88%;
+      line-height: 1.6;
+    }
+    .err-setup a { color: #C4A35A; text-decoration: none; }
+    .err-setup a:hover { text-decoration: underline; }
+    .err-setup code { font-size: 11px; opacity: 0.8; }
+    .retry-btn {
+      font-size: 11px;
+      color: #E57373;
+      background: transparent;
+      border: 0.5px solid rgba(229,115,115,0.4);
+      border-radius: 5px;
+      padding: 2px 8px;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+    .retry-btn:hover { background: rgba(229,115,115,0.1); }
+
+    /* Board session */
+    .board-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 32px 20px;
+      text-align: center;
+      min-height: 200px;
+    }
+    .board-icon { font-size: 30px; opacity: 0.15; }
+    .board-title { font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.6); }
+    .board-sub { font-size: 12.5px; color: rgba(255,255,255,0.3); max-width: 320px; line-height: 1.65; }
+
+    /* Progress row (lives in board-hdr, not content) */
+    .prog-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 0 4px;
+    }
+    .prog-dot { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .prog-sep { width: 16px; border-top: 0.5px solid rgba(255,255,255,0.08); margin-top: 14px; }
+    .prog-av {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      font-weight: 700;
+      opacity: 0.25;
+      transition: opacity 0.25s;
+    }
+    .prog-av.done { opacity: 1; }
+    .prog-av.cur { opacity: 1; animation: pulse 1s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 0.65; } 50% { opacity: 1; } }
+    .prog-nm { font-size: 8px; color: rgba(255,255,255,0.25); transition: color 0.2s; }
+    .prog-nm.done { color: rgba(255,255,255,0.45); }
+    .prog-nm.cur { color: rgba(255,255,255,0.85); }
+
+    .board-status {
+      font-size: 11px;
+      color: rgba(255,255,255,0.28);
+      text-align: center;
+      padding: 2px 0 8px;
+    }
+
+    /* Debate cards */
+    .debate-card {
+      border-radius: 10px;
+      border: 0.5px solid rgba(255,255,255,0.08);
+      background: #16161a;
+      overflow: hidden;
+    }
+    .debate-inner { border-left: 2px solid transparent; }
+    .debate-hdr {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 11px 14px 8px;
+    }
+    .debate-name { font-size: 12px; font-weight: 500; }
+    .debate-role { font-size: 10px; color: rgba(255,255,255,0.32); }
+    .debate-body {
+      font-size: 13.5px;
+      line-height: 1.68;
+      padding: 0 14px 12px;
+      color: #cccad6;
+    }
+    .debate-body p + p { margin-top: 10px; }
+    .debate-footer { display: flex; justify-content: flex-end; gap: 6px; padding: 0 10px 9px; }
+
+    /* Board completion row */
+    .board-done-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding: 4px 0 8px;
+    }
+    .new-session-btn {
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      background: #16161a;
+      border: 0.5px solid rgba(255,255,255,0.08);
+      border-radius: 7px;
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .new-session-btn:hover { color: #f0eff4; border-color: rgba(255,255,255,0.2); }
+    .export-btn {
+      font-size: 11px;
+      color: rgba(196,163,90,0.7);
+      background: rgba(196,163,90,0.07);
+      border: 0.5px solid rgba(196,163,90,0.25);
+      border-radius: 7px;
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: all 0.12s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .export-btn:hover { color: #C4A35A; border-color: rgba(196,163,90,0.5); background: rgba(196,163,90,0.1); }
+
+    /* Memory panel */
+    .mem-panel {
+      background: #111115;
+      border-top: 0.5px solid rgba(255,255,255,0.07);
+      padding: 13px 16px;
+      max-height: 210px;
+      overflow-y: auto;
+      flex-shrink: 0;
+      scrollbar-width: thin;
+      scrollbar-color: #1d1d24 transparent;
+    }
+    .mem-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .mem-lbl { font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; }
+    .mem-add-row { display: flex; gap: 6px; margin-bottom: 10px; }
+    .mem-inp {
+      flex: 1;
+      background: #1d1d24;
+      border: 0.5px solid rgba(255,255,255,0.09);
+      border-radius: 7px;
+      padding: 7px 11px;
+      font-size: 12px;
+      color: #f0eff4;
+      font-family: inherit;
+      outline: none;
+    }
+    .mem-inp:focus { border-color: rgba(255,255,255,0.2); }
+    .mem-add-btn {
+      font-size: 11px;
+      background: #1d1d24;
+      border: 0.5px solid rgba(255,255,255,0.11);
+      border-radius: 7px;
+      padding: 7px 12px;
+      color: #f0eff4;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .mem-item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; border-bottom: 0.5px solid rgba(255,255,255,0.04); }
+    .mem-text { font-size: 12px; color: rgba(255,255,255,0.45); flex: 1; line-height: 1.45; }
+    .mem-del { font-size: 12px; color: rgba(255,255,255,0.18); background: transparent; border: none; cursor: pointer; padding: 0 4px; }
+    .mem-del:hover { color: rgba(255,255,255,0.6); }
+    .mem-empty { font-size: 12px; color: rgba(255,255,255,0.22); text-align: center; padding: 12px 0; }
+
+    /* Chat thread meta */
+    .thread-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .thread-count { font-size: 10px; color: rgba(255,255,255,0.2); }
+    .clear-btn {
+      font-size: 10px;
+      color: rgba(255,255,255,0.2);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .clear-btn:hover { color: rgba(255,255,255,0.6); }
+
+    /* Footer input */
+    .foot {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      padding: 12px 14px;
+      border-top: 0.5px solid rgba(255,255,255,0.07);
+      flex-shrink: 0;
+    }
+    textarea#inp {
+      flex: 1;
+      background: #16161a;
+      border: 0.5px solid rgba(255,255,255,0.09);
+      border-radius: 9px;
+      padding: 10px 13px;
+      resize: none;
+      font-size: 13.5px;
+      color: #f0eff4;
+      font-family: inherit;
+      line-height: 1.5;
+      outline: none;
+      min-height: 44px;
+      max-height: 110px;
+      transition: border-color 0.12s;
+    }
+    textarea#inp:focus { border-color: rgba(255,255,255,0.2); }
+    textarea#inp::placeholder { color: rgba(255,255,255,0.22); }
+    #send-btn {
+      width: 40px; height: 40px;
+      border-radius: 9px;
+      background: #1d1d24;
+      border: 0.5px solid rgba(255,255,255,0.1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.45);
+      flex-shrink: 0;
+      font-size: 16px;
+      transition: all 0.12s;
+    }
+    #send-btn:hover { color: #f0eff4; border-color: rgba(255,255,255,0.22); }
+    #send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* Mobile responsive */
+    @media (max-width: 480px) {
+      body { padding: 0; }
+      #app { border-radius: 0; height: 100vh; max-height: 100vh; border: none; }
+      .hdr { padding: 10px 12px; gap: 8px; }
+      .brand { font-size: 10px; }
+      .acard { width: 76px; padding: 8px 6px; }
+      .av { width: 30px; height: 30px; font-size: 9px; }
+      .adv-row { padding: 8px 10px; gap: 5px; }
+      .foot { padding: 10px; }
+      .bubble { max-width: 94%; font-size: 13px; }
+      .mem-btn .mem-saved-lbl { display: none; }
+      .prog-av { width: 22px; height: 22px; font-size: 7px; }
+      .prog-sep { width: 10px; }
+      .content { padding: 12px; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="net-banner" class="net-banner" style="display:none">
+    Server unreachable — make sure <code>npm start</code> is running, then refresh.
+  </div>
+
+  <div class="hdr">
+    <div class="brand"><div class="brand-pip"></div>Board of advisors</div>
+    <div class="mode-pills">
+      <button id="btn-ind" class="pill active" onclick="setMode('ind')">Individual</button>
+      <button id="btn-brd" class="pill" onclick="setMode('brd')">Board session</button>
+    </div>
+    <button class="mem-btn" onclick="toggleMem()">
+      <i class="ti ti-brain" style="font-size:13px"></i>
+      <span id="mc">0</span> <span class="mem-saved-lbl">saved</span>
+    </button>
+  </div>
+
+  <div id="adv-row" class="adv-row"></div>
+  <div id="board-hdr" class="board-hdr" style="display:none">
+    <div id="prog-row" class="prog-row"></div>
+    <div id="board-status-line" class="board-status"></div>
+  </div>
+  <div id="content" class="content"></div>
+  <div id="mem-panel" class="mem-panel" style="display:none"></div>
+
+  <div class="foot">
+    <textarea id="inp" placeholder="Select an advisor above..." rows="1"></textarea>
+    <button id="send-btn" disabled><i class="ti ti-send" style="font-size:15px"></i></button>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let ADVISORS = [];
+let mode = 'ind';
+let selId = null;
+let hist = {};         // { [advisorId]: [{role, content},...] }
+let memories = [];     // server-synced array
+let memOpen = false;
+
+let bThread = [];      // [{adv, content, error}]
+let bTopic = '';
+let running = false;
+let loading = false;
+
+let lastRetry = null;  // { fn } — stores last retryable action
+let currentLoadingCard = null; // DOM ref
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const [advRes, memRes] = await Promise.all([
+      fetch('/api/advisors'),
+      fetch('/api/memory')
+    ]);
+
+    if (!advRes.ok) throw new Error('advisors fetch failed');
+    ADVISORS = await advRes.json();
+
+    const memData = await memRes.json();
+    memories = memData.memories || [];
+
+    // Auto-migrate localStorage memories if server is empty
+    const localRaw = localStorage.getItem('flo_board_mems');
+    if (localRaw && memories.length === 0) {
+      let localMems = [];
+      try { localMems = JSON.parse(localRaw); } catch {}
+      if (localMems.length > 0) {
+        for (const txt of localMems) {
+          await apiAddMemory(txt);
+        }
+        localStorage.removeItem('flo_board_mems');
+        memories = (await (await fetch('/api/memory')).json()).memories || [];
+      }
+    }
+  } catch (e) {
+    if (e instanceof TypeError) {
+      showNetBanner(true);
+    }
+    ADVISORS = [];
+  }
+
+  renderAll();
+}
+
+// ── API helpers ───────────────────────────────────────────────────────────────
+function showNetBanner(show) {
+  document.getElementById('net-banner').style.display = show ? 'block' : 'none';
+}
+
+async function callAPI(advisorId, messages, maxTokens, boardMode = null) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ advisorId, messages, max_tokens: maxTokens, boardMode }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    showNetBanner(false);
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+      throw new Error(err.error || `HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    if (!data.content || !data.content[0]) throw new Error('Empty response from API');
+    return data.content[0].text;
+  } catch (e) {
+    clearTimeout(timeoutId);
+    if (e.name === 'AbortError') throw new Error('TIMEOUT');
+    if (e instanceof TypeError) { showNetBanner(true); throw new Error('UNREACHABLE'); }
+    throw e;
+  }
+}
+
+async function apiAddMemory(txt) {
+  try {
+    const res = await fetch('/api/memory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: txt })
+    });
+    const data = await res.json();
+    memories = data.memories || memories;
+    document.getElementById('mc').textContent = memories.length;
+  } catch {}
+}
+
+async function apiDeleteMemory(txt) {
+  try {
+    const res = await fetch('/api/memory', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: txt })
+    });
+    const data = await res.json();
+    memories = data.memories || memories;
+    document.getElementById('mc').textContent = memories.length;
+  } catch {}
+}
+
+async function saveSession(advisorId) {
+  try {
+    await fetch(`/api/sessions/${advisorId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: hist[advisorId] })
+    });
+  } catch {}
+}
+
+async function loadSession(advisorId) {
+  try {
+    const res = await fetch(`/api/sessions/${advisorId}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+async function deleteSession(advisorId) {
+  try {
+    await fetch(`/api/sessions/${advisorId}`, { method: 'DELETE' });
+  } catch {}
+}
+
+async function saveBoardSession(topic, thread) {
+  try {
+    await fetch('/api/board-sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, thread })
+    });
+  } catch {}
+}
+
+// ── Text helpers ──────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fmt(s) {
+  const escaped = esc(s);
+  const withParas = escaped.replace(/\n\n+/g, '||PARA||').replace(/\n/g, '<br>');
+  return withParas.split('||PARA||').map(p => `<p>${p}</p>`).join('');
+}
+function makeErrorContent(errMsg, showRetry) {
+  if (errMsg === 'UNREACHABLE') {
+    return `<div class="err-msg"><i class="ti ti-wifi-off" style="font-size:13px;flex-shrink:0"></i>Server unreachable</div>`;
+  }
+  if (errMsg === 'TIMEOUT') {
+    const retryHtml = showRetry ? `<button class="retry-btn" onclick="retryLast()">Retry</button>` : '';
+    return `<div class="err-msg"><i class="ti ti-clock" style="font-size:13px;flex-shrink:0"></i>Request timed out. ${retryHtml}</div>`;
+  }
+  if (errMsg.includes('ANTHROPIC_API_KEY')) {
+    return `<div class="err-setup">API key not configured. Add <code>ANTHROPIC_API_KEY</code> to your <code>.env</code> file — <a href="https://console.anthropic.com" target="_blank">get one here</a>.</div>`;
+  }
+  return `<div class="err-msg"><i class="ti ti-alert-circle" style="font-size:13px;flex-shrink:0"></i>${esc(errMsg)}</div>`;
+}
+
+// ── Individual mode ───────────────────────────────────────────────────────────
+async function sendInd(txt) {
+  if (!selId || loading) return;
+  if (!hist[selId]) hist[selId] = [];
+  hist[selId].push({ role: 'user', content: txt });
+  loading = true;
+  renderContent();
+
+  const adv = ADVISORS.find(a => a.id === selId);
+  const capturedId = selId;
+
+  const doSend = async () => {
+    try {
+      const reply = await callAPI(adv.id, hist[capturedId]);
+      hist[capturedId].push({ role: 'assistant', content: reply });
+      // Auto-save topic as memory on first exchange
+      if (hist[capturedId].length === 2) {
+        await apiAddMemory(`[${adv.n}] ${txt.substring(0, 70)}`);
+      }
+      await saveSession(capturedId);
+      lastRetry = null;
+    } catch(e) {
+      hist[capturedId].push({ role: 'assistant', content: null, error: e.message });
+      if (e.message === 'TIMEOUT') {
+        lastRetry = { fn: async () => {
+          // Remove the error entry and retry
+          hist[capturedId] = hist[capturedId].filter(m => !m.error);
+          loading = true;
+          renderContent();
+          await doSend();
+          loading = false;
+          renderContent();
+        }};
+      }
+    }
+  };
+
+  await doSend();
+  loading = false;
+  if (selId === capturedId) renderContent();
+}
+
+async function retryLast() {
+  if (lastRetry) await lastRetry.fn();
+}
+
+// ── Board session ─────────────────────────────────────────────────────────────
+async function runBoard(topic) {
+  if (running) return;
+  bTopic = topic;
+  bThread = [];
+  running = true;
+
+  initBoardUI(topic);
+
+  let debateLog = '';
+  const done = [];
+
+  for (let i = 0; i < ADVISORS.length; i++) {
+    const adv = ADVISORS[i];
+    updateProgRow(done, adv.id);
+    setBoardStatus(`${adv.n} is thinking...`);
+    appendLoadingCard(adv);
+
+    try {
+      const reply = await callAPI(adv.id, [{ role: 'user', content: topic }], null, {
+        topic,
+        isOpener: i === 0,
+        debateLog
+      });
+      replaceLoadingCard(adv, reply, null);
+      debateLog += `${adv.n} (${adv.sh}): ${reply}\n\n`;
+      done.push(adv.id);
+    } catch(e) {
+      replaceLoadingCard(adv, null, e.message);
+      done.push(adv.id); // mark done even on error so progress advances
+    }
+
+    updateProgRow(done, null);
+  }
+
+  running = false;
+  setBoardStatus(`Board has spoken — ${done.length} perspectives on: "${esc(bTopic.substring(0, 55))}${bTopic.length > 55 ? '...' : ''}"`);
+  updateProgRow(done, null);
+
+  await apiAddMemory(`[Board session] "${topic.substring(0, 80)}"`);
+  await saveBoardSession(topic, bThread.map(t => ({
+    advisorId: t.adv.id,
+    advisorName: t.adv.n,
+    content: t.content
+  })));
+
+  // Append completion row
+  const row = document.createElement('div');
+  row.className = 'board-done-row';
+  row.innerHTML = `
+    <button class="export-btn" onclick="exportTranscript()">
+      <i class="ti ti-download" style="font-size:12px"></i> Export transcript
+    </button>
+    <button class="new-session-btn" onclick="clearBoard()">New board session</button>`;
+  document.getElementById('content').appendChild(row);
+  scrollContent();
+}
+
+function exportTranscript() {
+  const date = new Date().toLocaleDateString('en-US', { dateStyle: 'long' });
+  const lines = [
+    `# Board Session: ${bTopic}`,
+    date,
+    '',
+    '---',
+    ''
+  ];
+  bThread.forEach(t => {
+    lines.push(`## ${t.adv.n} (${t.adv.r})`);
+    lines.push('');
+    lines.push(t.content || `*Error: ${t.error}*`);
+    lines.push('');
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `board-session-${Date.now()}.md`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── Board DOM helpers (append-only, no full re-render) ───────────────────────
+function initBoardUI(topic) {
+  const hdr = document.getElementById('board-hdr');
+  hdr.style.display = 'block';
+
+  // Build static prog-row HTML once
+  const pr = document.getElementById('prog-row');
+  pr.innerHTML = ADVISORS.map((a, i) => `
+    <div class="prog-dot" id="pd-${a.id}">
+      <div class="prog-av" id="pa-${a.id}" style="background:${a.bg};color:${a.c}">${a.i}</div>
+      <div class="prog-nm" id="pn-${a.id}">${a.sh.split(' ')[0]}</div>
+    </div>
+    ${i < ADVISORS.length - 1 ? '<div class="prog-sep"></div>' : ''}`
+  ).join('');
+
+  setBoardStatus('Convening the board...');
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+}
+
+function updateProgRow(doneIds, curId) {
+  ADVISORS.forEach(a => {
+    const av = document.getElementById(`pa-${a.id}`);
+    const nm = document.getElementById(`pn-${a.id}`);
+    if (!av || !nm) return;
+    const isDone = doneIds.includes(a.id);
+    const isCur = curId === a.id;
+    av.className = `prog-av${isDone ? ' done' : ''}${isCur ? ' cur' : ''}`;
+    nm.className = `prog-nm${isDone ? ' done' : ''}${isCur ? ' cur' : ''}`;
+  });
+}
+
+function setBoardStatus(msg) {
+  document.getElementById('board-status-line').textContent = msg;
+}
+
+function makeDebateCardEl(adv, content, error) {
+  const div = document.createElement('div');
+  div.className = 'debate-card';
+  const threadIdx = bThread.length; // index this card will occupy after push in replaceLoadingCard
+  if (error) {
+    div.innerHTML = `<div class="debate-inner" style="border-left-color:${adv.c}">
+      <div class="debate-hdr">
+        <div class="av" style="width:28px;height:28px;font-size:8px;background:${adv.bg};color:${adv.c}">${adv.i}</div>
+        <div><div class="debate-name" style="color:${adv.c}">${adv.n}</div><div class="debate-role">${adv.r}</div></div>
+      </div>
+      <div style="padding:0 14px 12px">${makeErrorContent(error, false)}</div>
+    </div>`;
+  } else {
+    div.innerHTML = `<div class="debate-inner" style="border-left-color:${adv.c}">
+      <div class="debate-hdr">
+        <div class="av" style="width:28px;height:28px;font-size:8px;background:${adv.bg};color:${adv.c}">${adv.i}</div>
+        <div><div class="debate-name" style="color:${adv.c}">${adv.n}</div><div class="debate-role">${adv.r}</div></div>
+      </div>
+      <div class="debate-body">${fmt(content)}</div>
+      <div class="debate-footer">
+        <button class="act-btn" onclick="saveBoardInsight(${threadIdx})">+ save insight</button>
+      </div>
+    </div>`;
+  }
+  return div;
+}
+
+function appendLoadingCard(adv) {
+  const div = document.createElement('div');
+  div.className = 'debate-card';
+  div.innerHTML = `<div class="debate-inner" style="border-left-color:${adv.c}">
+    <div class="debate-hdr">
+      <div class="av" style="width:28px;height:28px;font-size:8px;background:${adv.bg};color:${adv.c}">${adv.i}</div>
+      <div><div class="debate-name" style="color:${adv.c}">${adv.n}</div><div class="debate-role">${adv.r}</div></div>
+    </div>
+    <div class="dots" style="padding:8px 14px 12px"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  </div>`;
+  currentLoadingCard = div;
+  document.getElementById('content').appendChild(div);
+  scrollContent();
+}
+
+function replaceLoadingCard(adv, content, error) {
+  if (!currentLoadingCard) return;
+  const card = makeDebateCardEl(adv, content, error);
+  currentLoadingCard.replaceWith(card);
+  currentLoadingCard = null;
+  bThread.push({ adv, content, error });
+  scrollContent();
+}
+
+function scrollContent() {
+  const el = document.getElementById('content');
+  el.scrollTop = el.scrollHeight;
+}
+
+// ── Mode / advisor selection ───────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-ind').className = 'pill' + (m === 'ind' ? ' active' : '');
+  document.getElementById('btn-brd').className = 'pill' + (m === 'brd' ? ' active' : '');
+  document.getElementById('adv-row').style.display = m === 'ind' ? 'flex' : 'none';
+
+  if (m === 'ind') {
+    document.getElementById('board-hdr').style.display = 'none';
+  } else if (m === 'brd' && (running || bThread.length > 0)) {
+    document.getElementById('board-hdr').style.display = 'block';
+  } else {
+    document.getElementById('board-hdr').style.display = 'none';
+  }
+
+  updatePlaceholder();
+  renderContent();
+  updateSendBtn();
+}
+
+async function selAdv(id) {
+  if (selId === id) return;
+  selId = id;
+  renderAdv();
+  renderContent();
+  updatePlaceholder();
+  updateSendBtn();
+
+  // Auto-restore session if not already in memory
+  if (!hist[id] || hist[id].length === 0) {
+    const session = await loadSession(id);
+    if (session && session.messages && session.messages.length > 0) {
+      hist[id] = session.messages;
+      renderContent();
+    }
+  }
+}
+
+function updatePlaceholder() {
+  const inp = document.getElementById('inp');
+  if (mode === 'brd') {
+    inp.placeholder = 'Topic or question for the full board...';
+  } else if (selId) {
+    const a = ADVISORS.find(x => x.id === selId);
+    inp.placeholder = a ? `Ask ${a.n}...` : 'Ask...';
+  } else {
+    inp.placeholder = 'Select an advisor above...';
+  }
+}
+
+function updateSendBtn() {
+  const val = document.getElementById('inp').value.trim();
+  const canSend = val && !loading && !running && (mode === 'brd' || selId);
+  document.getElementById('send-btn').disabled = !canSend;
+}
+
+function handleSend() {
+  const inp = document.getElementById('inp');
+  const txt = inp.value.trim();
+  if (!txt || (mode === 'ind' && !selId) || loading || running) return;
+  inp.value = '';
+  inp.style.height = 'auto';
+  updateSendBtn();
+  if (mode === 'ind') sendInd(txt);
+  else runBoard(txt);
+}
+
+function toggleMem() {
+  memOpen = !memOpen;
+  renderMemPanel();
+}
+
+function useSugg(i) {
+  const a = ADVISORS.find(x => x.id === selId);
+  if (!a) return;
+  const inp = document.getElementById('inp');
+  inp.value = a.sg[i];
+  inp.focus();
+  updateSendBtn();
+}
+
+function useBoardSugg(txt) {
+  const inp = document.getElementById('inp');
+  inp.value = txt;
+  inp.focus();
+  updateSendBtn();
+}
+
+// Save insight by index — avoids passing raw strings through onclick attributes
+async function saveIndInsight(msgIdx) {
+  const adv = ADVISORS.find(a => a.id === selId);
+  if (!adv) return;
+  const msg = (hist[selId] || [])[msgIdx];
+  if (!msg || !msg.content) return;
+  await apiAddMemory(`[${adv.n}] "${msg.content.substring(0, 80)}"`);
+  if (memOpen) renderMemPanel();
+}
+async function saveBoardInsight(threadIdx) {
+  const t = bThread[threadIdx];
+  if (!t || !t.content) return;
+  await apiAddMemory(`[${t.adv.n}] "${t.content.substring(0, 80)}"`);
+  if (memOpen) renderMemPanel();
+}
+
+async function clearInd() {
+  if (!selId) return;
+  await deleteSession(selId);
+  hist[selId] = [];
+  renderContent();
+}
+
+function clearBoard() {
+  bThread = [];
+  bTopic = '';
+  running = false;
+  document.getElementById('board-hdr').style.display = 'none';
+  renderContent();
+}
+
+// ── Render functions ───────────────────────────────────────────────────────────
+function renderAll() {
+  renderAdv();
+  renderContent();
+  renderMemPanel();
+  document.getElementById('mc').textContent = memories.length;
+}
+
+function renderAdv() {
+  const row = document.getElementById('adv-row');
+  row.innerHTML = ADVISORS.map(a => `
+    <div class="acard${selId === a.id ? ' sel' : ''}"
+         style="${selId === a.id ? `border-color:${a.c}44` : ''}"
+         onclick="selAdv('${a.id}')">
+      <div class="av" style="background:${a.bg};color:${a.c}">${a.i}</div>
+      <div class="av-nm">${a.n}</div>
+      <div class="av-rl">${a.sh}</div>
+    </div>`).join('');
+}
+
+function renderContent() {
+  const el = document.getElementById('content');
+
+  if (mode === 'ind') {
+    // Hide board-hdr
+    document.getElementById('board-hdr').style.display = 'none';
+    el.innerHTML = renderInd();
+    el.scrollTop = el.scrollHeight;
+  } else {
+    // Board mode — only render if there's no active board session running
+    // (if running/appending, don't overwrite)
+    if (!running && bThread.length === 0) {
+      document.getElementById('board-hdr').style.display = 'none';
+      el.innerHTML = renderBoardEmpty();
+    }
+    // If running or done, board-hdr and content are managed by board DOM helpers
+  }
+
+  updateSendBtn();
+}
+
+function renderInd() {
+  if (ADVISORS.length === 0) {
+    return `<div class="empty"><div class="empty-lbl">Loading advisors...</div></div>`;
+  }
+  if (!selId) {
+    return `<div class="empty">
+      <div class="av" style="width:42px;height:42px;font-size:13px;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.25)">?</div>
+      <div class="empty-lbl">Select an advisor above to begin a conversation</div>
+    </div>`;
+  }
+
+  const adv = ADVISORS.find(a => a.id === selId);
+  const msgs = hist[selId] || [];
+
+  if (msgs.length === 0) {
+    return `<div class="empty">
+      <div class="av" style="width:42px;height:42px;font-size:13px;background:${adv.bg};color:${adv.c}">${adv.i}</div>
+      <div class="av-nm" style="font-size:14px;color:${adv.c}">${adv.n}</div>
+      <div class="empty-lbl">${adv.r}</div>
+      <div class="sugg-row">
+        ${adv.sg.map((s, i) => `<button class="sugg" onclick="useSugg(${i})">${esc(s)}</button>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  let h = `<div class="thread-meta">
+    <span class="thread-count">${msgs.length} messages with ${adv.n}</span>
+    <button class="clear-btn" onclick="clearInd()">clear</button>
+  </div>`;
+
+  msgs.forEach((m, idx) => {
+    if (m.role === 'user') {
+      h += `<div class="msg user">
+        <div class="msg-meta">You</div>
+        <div class="bubble">${fmt(m.content)}</div>
+      </div>`;
+    } else if (m.error) {
+      h += `<div class="msg asst">
+        <div class="msg-meta">
+          <div class="av-sm" style="background:${adv.bg};color:${adv.c}">${adv.i}</div>
+          <span style="color:${adv.c}">${adv.n}</span>
+        </div>
+        ${makeErrorContent(m.error, m.error === 'TIMEOUT')}
+      </div>`;
+    } else {
+      h += `<div class="msg asst">
+        <div class="msg-meta">
+          <div class="av-sm" style="background:${adv.bg};color:${adv.c}">${adv.i}</div>
+          <span style="color:${adv.c}">${adv.n}</span>
+        </div>
+        <div class="bubble">${fmt(m.content)}</div>
+        <div class="msg-actions">
+          <button class="act-btn" onclick="saveIndInsight(${idx})">+ save insight</button>
+        </div>
+      </div>`;
+    }
+  });
+
+  if (loading) {
+    h += `<div class="msg asst">
+      <div class="msg-meta">
+        <div class="av-sm" style="background:${adv.bg};color:${adv.c}">${adv.i}</div>
+      </div>
+      <div class="bubble"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+    </div>`;
+  }
+
+  return h;
+}
+
+function renderBoardEmpty() {
+  return `<div class="board-empty">
+    <div class="board-icon">◈</div>
+    <div class="board-title">Board session</div>
+    <div class="board-sub">Submit any topic. Your board deliberates — each advisor sees what the others said and responds directly to them.</div>
+    <div class="sugg-row" style="margin-top:8px">
+      <button class="sugg" onclick="useBoardSugg('Should I build my AI content system from scratch or learn by doing first?')">Should I build my AI content system from scratch or learn by doing?</button>
+      <button class="sugg" onclick="useBoardSugg('How do I position AI expertise for the Berlin job market and international freelance work?')">How do I position AI expertise for the Berlin job market?</button>
+      <button class="sugg" onclick="useBoardSugg(&quot;What is my smartest move for Williams Inn Pizza this month?&quot;)">What is my smartest move for Williams Inn Pizza this month?</button>
+    </div>
+  </div>`;
+}
+
+function renderMemPanel() {
+  const p = document.getElementById('mem-panel');
+  if (!memOpen) { p.style.display = 'none'; return; }
+  p.style.display = 'block';
+  p.innerHTML = `
+    <div class="mem-hdr">
+      <span class="mem-lbl"><i class="ti ti-brain" style="font-size:12px;margin-right:4px"></i>Board memory (${memories.length})</span>
+      <button class="mem-del" onclick="toggleMem()" style="font-size:11px;color:rgba(255,255,255,0.3)">close</button>
+    </div>
+    <div class="mem-add-row">
+      <input class="mem-inp" id="mem-inp-field" placeholder="Add a memory manually..." onkeydown="if(event.key==='Enter'){addManualMem();event.preventDefault()}">
+      <button class="mem-add-btn" onclick="addManualMem()">Save</button>
+    </div>
+    ${memories.length === 0
+      ? '<div class="mem-empty">No memories yet — they accumulate as you use the board, or add them manually above.</div>'
+      : [...memories].reverse().map((m, ri) => {
+          const originalIdx = memories.length - 1 - ri;
+          return `<div class="mem-item">
+            <span class="mem-text">${esc(m)}</span>
+            <button class="mem-del" onclick="delMem(${originalIdx})" title="Delete"><i class="ti ti-x" style="font-size:11px"></i></button>
+          </div>`;
+        }).join('')
+    }`;
+}
+
+async function addManualMem() {
+  const f = document.getElementById('mem-inp-field');
+  if (!f || !f.value.trim()) return;
+  await apiAddMemory(f.value.trim());
+  f.value = '';
+  renderMemPanel();
+}
+
+async function delMem(idx) {
+  const txt = memories[idx];
+  if (txt === undefined) return;
+  await apiDeleteMemory(txt);
+  renderMemPanel();
+}
+
+// ── Input events ───────────────────────────────────────────────────────────────
+const inp = document.getElementById('inp');
+inp.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 110) + 'px';
+  updateSendBtn();
+});
+inp.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+});
+document.getElementById('send-btn').addEventListener('click', handleSend);
+
+// ── Start ──────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

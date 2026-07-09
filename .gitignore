@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Secrets — your real API key lives here. Never commit this.
+.env
+
+# Local runtime data (sessions, memories) — personal to each user.
+# The empty folder structure is kept via .gitkeep.
+data/*
+!data/sessions/
+data/sessions/*
+!data/sessions/.gitkeep
+
