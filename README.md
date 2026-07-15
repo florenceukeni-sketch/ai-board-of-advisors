@@ -4,13 +4,17 @@
 
 Six AI advisors who don't just answer my questions. They debate them, in front of me, and then I decide.
 
-I built this for myself. I'm navigating a lot at once right now — a content career in AI, freelance work on the side, and a move across an ocean to Germany — and the decisions kept outgrowing the advice any single person, or any single ChatGPT-style answer, could give me. I wanted a CFO who'd challenge my spending, a strategist who'd think in five-year arcs, a growth operator who wants to see things ship, and a critic whose whole job is to find the flaw before it finds me. So I built them.
+I built this for myself. I'm navigating a lot at once right now — a content career in AI, freelance work on the side, and a move across an ocean to Berlin — and the decisions kept outgrowing the advice any single person, or any single ChatGPT-style answer, could give me. I wanted a CFO who'd challenge my spending, a strategist who'd think in five-year arcs, a growth operator who wants to see things ship, and a critic whose whole job is to find the flaw before it finds me. So I built them.
 
 The advisors know me. Not through any magic — I wrote my actual context into each of their system prompts, so they open every session already understanding who I am, what I'm working toward, and what's at stake. That's the point of the project, and it's the thing worth understanding even if you never run a line of it: **this is a personal instrument, tuned to one person's life, and reading how it's built tells you how I think about my own.**
 
 Most "AI persona" tools run personas in parallel — six independent monologues that never touch. This one runs them in sequence. Each advisor receives the full transcript of what the advisors before them said, and is instructed to engage: agree, push back, or build. The result is intellectual friction you can't get from prompting one model six times.
 
 Built on a deliberately minimal stack: Node.js, Express, vanilla JavaScript. No framework, no build step, no database. One command to run.
+
+![A board session in progress — all six advisors responding in sequence](board-session.png)
+
+*Want to see it work without running anything? Read a real debate in [`examples/`](examples/).*
 
 ## The board
 
