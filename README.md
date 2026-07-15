@@ -1,10 +1,14 @@
 # AI Board of Advisors
 
-Six calibrated AI advisors who don't just answer your question. They debate it.
+Six AI advisors who don't just answer my questions. They debate them, in front of me, and then I decide.
 
-Most "AI persona" tools run personas in parallel: you get six independent monologues that never touch. This one runs them in sequence. Each advisor receives the full transcript of what the advisors before them said, and their system prompt instructs them to engage: agree, push back, or build. The result is intellectual friction you can't get from prompting one model six times.
+I built this for myself. I'm navigating a lot at once right now — a content career in AI, freelance work on the side, and a move across an ocean to Berlin — and the decisions kept outgrowing the advice any single person, or any single ChatGPT-style answer, could give me. I wanted a CFO who'd challenge my spending, a strategist who'd think in five-year arcs, a growth operator who wants to see things ship, and a critic whose whole job is to find the flaw before it finds me. So I built them.
 
-Built as a deliberately minimal stack: Node.js, Express, vanilla JavaScript, no framework, no build step, no database. One command to run.
+The advisors know me. Not through any magic — I wrote my actual context into each of their system prompts, so they open every session already understanding who I am, what I'm working toward, and what's at stake. That's the point of the project, and it's the thing worth understanding even if you never run a line of it: **this is a personal instrument, tuned to one person's life, and reading how it's built tells you how I think about my own.**
+
+Most "AI persona" tools run personas in parallel — six independent monologues that never touch. This one runs them in sequence. Each advisor receives the full transcript of what the advisors before them said, and is instructed to engage: agree, push back, or build. The result is intellectual friction you can't get from prompting one model six times.
+
+Built on a deliberately minimal stack: Node.js, Express, vanilla JavaScript. No framework, no build step, no database. One command to run.
 
 ## The board
 
@@ -17,7 +21,17 @@ Built as a deliberately minimal stack: Node.js, Express, vanilla JavaScript, no 
 | Alex R., AI Veteran | What actually ships versus what is hype |
 | Mia K., Growth Operator | Systems, compounding returns, shipping |
 
-Each persona is defined in `advisors.js` with a distinct voice, a strategic lens, and a strict output format. Edit that one file to make the board yours.
+Each persona is defined in `advisors.js` with a distinct voice, a strategic lens, and a strict output format.
+
+## Why the board is tuned to me (and how it "knows" things)
+
+This is the design decision at the heart of the project, so it's worth being clear about how it works.
+
+The app talks to the Anthropic API directly, which — unlike the Claude chat product — has no memory and no personalization. It knows nothing about anyone. So every piece of context these advisors have about me is context I deliberately wrote into their system prompts: my role, my goals, the move to Berlin, the freelance work, the specific decisions I'm weighing. When Marcus the CFO pushes back on an idea because of my runway, it's because I told him what my runway is.
+
+That means two things. First, the "intelligence" here isn't retrieved from some profile — it's authored. The quality of the advice is a direct function of how precisely I described my own situation, which turned out to be a genuinely useful exercise in itself. Second, if you clone this and run it, the advisors will still think they're advising *me*. They won't adapt to you, because the context is written into the code, not pulled from your account.
+
+I kept it that way on purpose. A generic advice bot is a commodity. A board that's been carefully calibrated to one real person's actual life is a portrait — of the decisions I'm making, the lenses I find useful, and how I think about turning a messy situation into something a system can reason about. If you're reading this to understand how I work, `advisors.js` is the most honest file in the repo. (The obvious next version lets a new user inject their own context at startup instead of using mine — noted in [Future directions](#future-directions).)
 
 ## Quick start
 
@@ -85,10 +99,16 @@ A deliberate decision. This app has no authentication layer, and the Anthropic A
 
 So the deployment model is: clone it, add your own key, run it on your machine. Your usage, your key, your data. Serverless functions were prototyped and cut for a second reason: they have no persistent filesystem, which kills the cross-session memory feature that makes the board worth returning to.
 
-## Customizing the board
+## Making it yours
 
-Every advisor is an object in `advisors.js`: an ID, display metadata, suggested prompts, and a system prompt. To add a seventh advisor or replace the board entirely, edit that file and restart. The system prompts follow a consistent structure worth keeping: who the advisor is, who they're advising and with what context, their voice, and a strict output format.
+This board is tuned to me, but the structure is meant to be forked. Every advisor is an object in `advisors.js`: an ID, display metadata, suggested prompts, and a system prompt. To build your own board, rewrite those system prompts with your context and your advisors, then restart. Each prompt follows a consistent structure worth keeping: who the advisor is, who they're advising and with what context, their voice, and a strict output format. Swap my life for yours and the machine works exactly the same.
+
+## Future directions
+
+The most interesting extension is making the context dynamic. Right now my situation is hardcoded into every system prompt. The natural next version adds a short setup step where a user enters their own role, goals, and the decision they're weighing, and the app injects *that* into each advisor at runtime — same six lenses, personalized to whoever's asking. It's a small architectural change with a big conceptual payoff: it's the difference between a hardcoded prompt and a dynamic one, which is most of what "building with AI" actually is.
+
+Other things I'd add: a final synthesis round where a seventh call summarizes where the board agreed and disagreed; streaming responses so advice appears as it's written rather than all at once; and follow-up questions within a board session so a debate can go a second round.
 
 ## Built by
 
-[Florence Ukeni](https://florence-ukeni.netlify.app), Content Manager at the Center for Applied AI at the University of Chicago Booth School of Business. This is part of a series of working AI systems exploring persona architecture, sequential agent chaining, and practical AI implementation. MIT licensed.
+[Florence Ukeni](https://florence-ukeni.netlify.app), Content Manager at the Center for Applied AI at the University of Chicago Booth School of Business. I translate complex AI research for broad audiences by day; this is one of a series of working AI systems I build to understand implementation from the inside — persona architecture, sequential agent chaining, server-side prompt construction, and the practical patterns of putting a language model into a real application. MIT licensed.
