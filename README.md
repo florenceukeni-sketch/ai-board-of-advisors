@@ -12,8 +12,6 @@ Most "AI persona" tools run personas in parallel — six independent monologues 
 
 Built on a deliberately minimal stack: Node.js, Express, vanilla JavaScript. No framework, no build step, no database. One command to run.
 
-![A board session in progress — all six advisors responding in sequence](board-session.png)
-
 *Want to see it work without running anything? Read a real debate in [`examples/`](examples/).*
 
 ## The board
