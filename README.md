@@ -1,5 +1,7 @@
 # AI Board of Advisors
 
+![Board session in progress](Board-Meeting.png)
+
 Six AI advisors who don't just answer my questions. They debate them, in front of me, and then I decide.
 
 I built this for myself. I'm navigating a lot at once right now — a content career in AI, freelance work on the side, and a move across an ocean to Germany — and the decisions kept outgrowing the advice any single person, or any single ChatGPT-style answer, could give me. I wanted a CFO who'd challenge my spending, a strategist who'd think in five-year arcs, a growth operator who wants to see things ship, and a critic whose whole job is to find the flaw before it finds me. So I built them.
